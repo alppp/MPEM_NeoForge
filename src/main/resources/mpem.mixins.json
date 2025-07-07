@@ -22,7 +22,6 @@
     "ItemStackMixin",
     "mcmixinx",
     "MixinASMEventHandler",
-    "MixinBlockUpdatePacket",
     "MixinBoat",
     "MixinEventBus",
     "uimixin",
@@ -37,6 +36,7 @@
   },
   "mixins": [
     "EnchantmentMenuMixin",
+    "EntityTypeMixin",
     "LevelMixin"
   ]
 }
