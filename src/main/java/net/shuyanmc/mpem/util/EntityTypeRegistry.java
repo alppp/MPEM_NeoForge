@@ -17,6 +17,8 @@ public final class EntityTypeRegistry {
     // Thread-safe map to track successfully mixed EntityTypes
     private static final Map<EntityType<?>, Boolean> MIXED_ENTITY_TYPES = new ConcurrentHashMap<>();
     private static final Map<EntityType<?>, EntityOptimizationData> OPTIMIZATION_DATA = new ConcurrentHashMap<>();
+    // Cache for negative results to avoid repeated checks
+    private static final Map<EntityType<?>, Boolean> NEGATIVE_CACHE = new ConcurrentHashMap<>();
     
     private EntityTypeRegistry() {
         // Utility class
@@ -35,7 +37,30 @@ public final class EntityTypeRegistry {
      * Check if an EntityType has been successfully mixed
      */
     public static boolean isMixed(EntityType<?> entityType) {
-        return MIXED_ENTITY_TYPES.getOrDefault(entityType, false);
+        // Check positive cache first
+        if (MIXED_ENTITY_TYPES.containsKey(entityType)) {
+            return true;
+        }
+        
+        // Check negative cache to avoid repeated attempts
+        if (NEGATIVE_CACHE.containsKey(entityType)) {
+            return false;
+        }
+        
+        // Try to detect if this EntityType implements IOptimizableEntity
+        try {
+            if (entityType instanceof IOptimizableEntity) {
+                MIXED_ENTITY_TYPES.put(entityType, true);
+                OPTIMIZATION_DATA.put(entityType, new EntityOptimizationData());
+                return true;
+            }
+        } catch (Exception e) {
+            // Ignore and cache negative result
+        }
+        
+        // Cache negative result to avoid future checks
+        NEGATIVE_CACHE.put(entityType, true);
+        return false;
     }
     
     /**
@@ -43,7 +68,7 @@ public final class EntityTypeRegistry {
      */
     public static IOptimizableEntity getOptimizableEntity(EntityType<?> entityType) {
         if (!isMixed(entityType)) {
-            LOGGER.warn("Attempted to cast unmixed EntityType to IOptimizableEntity: {}", entityType);
+            // No logging needed - this is expected for most entities
             return null;
         }
         
@@ -51,9 +76,10 @@ public final class EntityTypeRegistry {
             return (IOptimizableEntity) entityType;
         } catch (ClassCastException e) {
             LOGGER.error("Failed to cast EntityType to IOptimizableEntity despite being registered as mixed: {}", entityType, e);
-            // Remove from registry to prevent future attempts
+            // Remove from registry and add to negative cache
             MIXED_ENTITY_TYPES.remove(entityType);
             OPTIMIZATION_DATA.remove(entityType);
+            NEGATIVE_CACHE.put(entityType, true);
             return null;
         }
     }
