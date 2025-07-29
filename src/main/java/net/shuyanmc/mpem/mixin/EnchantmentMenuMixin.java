@@ -9,8 +9,16 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 
 @Mixin(EnchantmentMenu.class)
 public class EnchantmentMenuMixin {
-    @Redirect(method = "slotsChanged",at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/ItemStack;isEnchantable()Z"))
-    public boolean slot(ItemStack instance){
-        return (instance.getItem().getMaxStackSize(instance)==1 && instance.has(DataComponents.MAX_DAMAGE)) || instance.isEnchantable();
+    @Redirect(method = "slotsChanged", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/ItemStack;isEnchantable()Z"))
+    public boolean mpem$slotChanged$InvokeEnchantableEvent(ItemStack instance) {
+        try {
+            // Enhanced enchantability check - allow single-stack items with durability
+            return (instance.getItem().getMaxStackSize(instance) == 1 && 
+                    instance.has(DataComponents.MAX_DAMAGE)) || 
+                   instance.isEnchantable();
+        } catch (Exception e) {
+            // Fallback to vanilla behavior if anything goes wrong
+            return instance.isEnchantable();
+        }
     }
 }
