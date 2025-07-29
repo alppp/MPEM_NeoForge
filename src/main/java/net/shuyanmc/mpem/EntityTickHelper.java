@@ -15,6 +15,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.shuyanmc.mpem.api.IOptimizableEntity;
 import net.shuyanmc.mpem.config.CoolConfig;
+import net.shuyanmc.mpem.util.EntityTypeRegistry;
 
 import java.util.Objects;
 import java.util.Set;
@@ -70,7 +71,7 @@ public final class EntityTickHelper {
     // ========== 私有工具方法 ==========
 
     private static boolean isAlwaysTicking(Entity entity) {
-        return ((IOptimizableEntity) entity.getType()).shouldAlwaysTick();
+        return EntityTypeRegistry.shouldAlwaysTick(entity.getType());
     }
 
     private static boolean isDeadEntity(Entity entity) {
@@ -89,7 +90,7 @@ public final class EntityTickHelper {
                 level instanceof ServerLevel serverLevel &&
                 serverLevel.getRaidAt(pos) != null &&
                 (entity instanceof Raider ||
-                        ((IOptimizableEntity) entity.getType()).shouldTickInRaid());
+                        EntityTypeRegistry.shouldTickInRaid(entity.getType()));
     }
 
     private static boolean isPlayerNearby(Level level, BlockPos pos) {
